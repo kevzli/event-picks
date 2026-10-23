@@ -1,0 +1,106 @@
+{
+  "timezone": "America/New_York",
+  "city": {
+    "name": "New York",
+    "eventbrite_slug": "ny--new-york",
+    "luma_place_id": "discplace-Izx1rQVSh8njYpP",
+    "partiful_explore": "https://partiful.com/explore/nyc"
+  },
+  "home": {"name": "Manhattan", "lat": 40.7359, "lng": -73.9911},
+
+  "filters": {
+    "max_km": 25,
+    "max_price": null,
+    "avoid_late": false,
+    "avoid_early": false
+  },
+
+  "picks_min": 5,
+  "picks_max": 8,
+  "max_per_day": 2,
+  "max_per_source": 5,
+  "max_per_organizer": 1,
+  "lane_repeat_penalty": 2.5,
+  "min_days_ahead": 7,
+  "open_after_run": true,
+
+  "lanes": {
+    "games": {
+      "label": "Games & game nights",
+      "weight": 5,
+      "search": ["board-games", "mahjong"],
+      "keywords": ["board game", "board games", "boardgame", "game night", "games night", "tabletop", "card game", "card games", "mahjong", "mah jong", "trivia", "chess", "game cafe", "puzzle"]
+    },
+    "arts": {
+      "label": "Art & museums",
+      "weight": 5,
+      "search": ["art", "museum"],
+      "keywords": ["museum", "gallery", "exhibition", "art show", "open studio", "art walk", "sculpture", "photography", "installation", "the met", "moma"]
+    },
+    "music": {
+      "label": "Music & shows",
+      "weight": 5,
+      "search": ["concerts", "comedy"],
+      "keywords": ["concert", "live music", "jazz", "orchestra", "choir", "chorus", "comedy", "stand-up", "improv", "theater", "theatre", "musical", "open mic", "dance performance"]
+    },
+    "food": {
+      "label": "Food & drink",
+      "weight": 5,
+      "search": ["food-and-drink"],
+      "keywords": ["tasting", "supper club", "dinner party", "cooking class", "bake sale", "food tour", "night market", "brunch", "wine", "coffee", "matcha", "dumpling", "potluck", "cookbook"]
+    },
+    "crafts": {
+      "label": "Crafts & workshops",
+      "weight": 5,
+      "search": ["workshops", "ceramics"],
+      "keywords": ["workshop", "ceramic", "ceramics", "pottery", "clay", "embroidery", "crochet", "knitting", "printmaking", "calligraphy", "candle making", "terrarium", "bookbinding", "paint and sip", "paint & sip", "diy"]
+    },
+    "ideas": {
+      "label": "Books & ideas",
+      "weight": 5,
+      "search": ["book-club", "philosophy"],
+      "keywords": ["book club", "reading club", "reading party", "book launch", "author talk", "book talk", "lecture", "philosophy", "panel discussion", "poetry reading", "phone-free", "phone free"]
+    },
+    "culture": {
+      "label": "Cultural & heritage",
+      "weight": 5,
+      "search": ["culture", "festival"],
+      "keywords": ["heritage", "cultural", "lunar new year", "mid-autumn", "diwali", "dia de los muertos", "día de los muertos", "lion dance", "tea ceremony", "folk dance", "festival", "chinatown", "little italy", "traditional music"]
+    },
+    "outdoors": {
+      "label": "Outdoors & active",
+      "weight": 5,
+      "search": ["outdoors", "running"],
+      "keywords": ["run club", "running club", "hike", "hiking", "picnic", "bike ride", "yoga", "pickleball", "climbing", "kayak", "walking tour", "park", "kite"]
+    },
+    "social": {
+      "label": "Social & dating",
+      "weight": 3,
+      "search": [],
+      "keywords": ["mixer", "meetup", "speed dating", "speed date", "singles", "dating", "matchmaking", "karaoke", "game show", "friendship"]
+    },
+    "tech": {
+      "label": "Tech & career",
+      "weight": 3,
+      "search": [],
+      "keywords": ["startup", "startups", "founder", "founders", "ai", "hackathon", "demo day", "networking", "career", "product", "engineering", "developer", "coworking", "tech"]
+    }
+  },
+
+  "penalties": [
+    {"label": "club / rave", "points": -4, "keywords": ["rave", "dj set", "techno", "edm", "club night", "nightclub", "bottle service"]}
+  ],
+
+  "followed_organizers": [],
+  "followed_bonus": 4,
+
+  "time_rules": {"late_start_hour": 22, "late_penalty": -3, "early_start_hour": 8, "early_penalty": -2},
+  "price_rules": {"free_bonus": 1, "over_40_penalty": -2, "over_80_penalty": -4},
+
+  "eventbrite_searches": ["things-to-do"],
+  "eventbrite_pages_per_search": 1,
+  "luma_calendars": [],
+  "skip_urls": [],
+  "skip_title_keywords": [],
+  "busy": []
+}
