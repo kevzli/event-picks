@@ -557,10 +557,8 @@ def render(picks, runners, meta, profile):
             " · " + html.escape(fmt_price(ev["price"])),
             desc)
 
-    more = ""
-    if runners:
-        more = '<section class="more"><h3>More to consider <span>%d</span></h3>\n%s\n</section>' % (
-            len(runners), "\n".join(card(e) for e in runners))
+    more = '<section class="panel" id="more" hidden>%s</section>' % (
+        "\n".join(card(e) for e in runners) or '<p class="empty">Nothing else this week.</p>')
     errors = '<footer>Some sources had trouble this run: %s</footer>' % html.escape(meta["errors"]) if meta["errors"] else ""
 
     counts = " · ".join("%s %d" % (k, v) for k, v in meta["counts"].items())
@@ -595,10 +593,11 @@ h2{font-size:18px;margin:8px 0 2px;line-height:1.3}
 h2 a{color:inherit;text-decoration:none}h2 a:hover{text-decoration:underline}
 .when{margin:0;font-weight:600}
 .meta{margin:2px 0 0;color:var(--mute);font-size:14px}
-.more{margin-top:36px;padding-top:20px;border-top:1px solid var(--line)}
-.more h3{font-size:15px;font-weight:600;color:var(--mute);margin:0 0 14px;text-transform:uppercase;letter-spacing:.06em}
-.more h3 span{font-weight:500;margin-left:6px;opacity:.7}
-.more:not(:has(.card:not([hidden]))){display:none}
+.tabs{display:inline-flex;background:var(--line);border-radius:10px;padding:3px;margin:0 0 14px}
+.tabs button{font:inherit;font-size:14px;font-weight:600;border:0;background:transparent;color:var(--mute);border-radius:8px;padding:6px 14px;cursor:pointer}
+.tabs button[aria-selected=true]{background:var(--card);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.15)}
+.tabs .n{font-weight:500;opacity:.6;margin-left:4px}
+.empty{color:var(--mute)}
 footer{margin-top:32px;color:var(--mute);font-size:13px}
 .chips{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px}
 .chips button{font:inherit;font-size:13px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:4px 12px;cursor:pointer}
@@ -606,19 +605,27 @@ footer{margin-top:32px;color:var(--mute);font-size:13px}
 </style></head><body><main>
 <h1>Your picks through %s</h1>
 <p class="sub">Updated %s · %d events scanned (%s)</p>
+<div class="tabs" role="tablist">
+<button role="tab" aria-selected="true" data-tab="top">Top picks<span class="n">%d</span></button><button role="tab" aria-selected="false" data-tab="more">More to consider<span class="n">%d</span></button>
+</div>
 <div class="chips" role="group" aria-label="Filter by site">
 <button aria-pressed="true" data-f="all">All</button><button aria-pressed="false" data-f="Eventbrite">Eventbrite</button><button aria-pressed="false" data-f="Luma">Luma</button><button aria-pressed="false" data-f="Partiful">Partiful</button>
 </div>
-%s
+<section class="panel" id="top">%s</section>
 %s
 %s
 </main><script>
+document.querySelectorAll('.tabs button').forEach(function(b){b.onclick=function(){
+  document.querySelectorAll('.tabs button').forEach(function(x){x.setAttribute('aria-selected',x===b)});
+  document.querySelectorAll('.panel').forEach(function(p){p.hidden=p.id!==b.dataset.tab});
+  window.scrollTo(0,0);
+}});
 document.querySelectorAll('.chips button').forEach(function(b){b.onclick=function(){
   document.querySelectorAll('.chips button').forEach(function(x){x.setAttribute('aria-pressed',x===b)});
   document.querySelectorAll('.card').forEach(function(c){c.hidden=b.dataset.f!=='all'&&c.dataset.src!==b.dataset.f});
 }});
 </script></body></html>""" % (
-        meta["end_label"], meta["run_label"], meta["total"], counts,
+        meta["end_label"], meta["run_label"], meta["total"], counts, len(picks), len(runners),
         "\n".join(card(e) for e in picks) or "<p>No strong matches this week.</p>",
         more, errors)
 
