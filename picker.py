@@ -525,109 +525,100 @@ def fmt_price(p):
     return "Free" if p == 0 else "$%g" % p
 
 
+def short_venue(v):
+    """Just the place name: drop street addresses after the first separator."""
+    v = (v or "").split(" · ")[0]
+    return v.split(",")[0].strip()
+
+
 def render(picks, runners, meta, profile):
     tz = ZoneInfo(profile["timezone"])
-    lanes = profile["lanes"]
 
     def card(ev):
+        url = html.escape(ev["url"])
+        src = ev["source"].lower()
         if ev.get("image"):
-            cover = '<a class="cover" href="%s" target="_blank" rel="noopener"><img src="%s" alt="" loading="lazy" onerror="this.parentNode.classList.add(&#39;ph&#39;,&#39;ph-%s&#39;);this.remove()"></a>' % (
-                html.escape(ev["url"]), html.escape(ev["image"]), ev["source"].lower())
+            thumb = ('<img src="%s" alt="" loading="lazy" '
+                     'onerror="this.parentNode.classList.add(&#39;ph&#39;);this.remove()">' % html.escape(ev["image"]))
         else:
-            cover = '<a class="cover ph ph-%s" href="%s" target="_blank" rel="noopener"></a>' % (
-                ev["source"].lower(), html.escape(ev["url"]))
+            thumb = ""
+        label = ev["source"] + (" · " + ev["tag"] if ev.get("tag") else "")
+        meta_line = " · ".join(x for x in (fmt_when(ev, tz), short_venue(ev["venue"]),
+                                           fmt_price(ev["price"]) if ev["price"] is not None else "") if x)
         desc = '<p class="desc">%s</p>' % html.escape(ev["blurb"]) if ev.get("blurb") else ""
-        tag = '<span class="tag">%s</span>' % html.escape(ev["tag"]) if ev.get("tag") else ""
-        flags = "".join('<span class="flag">%s</span>' % html.escape(f) for f in ev["flags"])
         return """
-<article class="card" data-src="%s">
-  %s
-  <div class="body">
-  <div class="top"><span class="src src-%s">%s</span>%s%s</div>
-  <h2><a href="%s" target="_blank" rel="noopener">%s</a></h2>
-  <p class="when">%s</p>
-  <p class="meta">%s%s</p>
-  %s
+<a class="ev" data-src="%s" href="%s" target="_blank" rel="noopener">
+  <div class="thumb%s">%s</div>
+  <div class="txt">
+    <p class="src"><i class="dot %s"></i>%s</p>
+    <h2>%s</h2>
+    <p class="meta">%s</p>
+    %s
   </div>
-</article>""" % (
-            ev["source"], cover, ev["source"].lower(), ev["source"], tag, flags,
-            html.escape(ev["url"]), html.escape(ev["title"]),
-            html.escape(fmt_when(ev, tz)),
-            html.escape(ev["venue"] or "Location on page"),
-            " · " + html.escape(fmt_price(ev["price"])),
-            desc)
+</a>""" % (ev["source"], url, "" if thumb else " ph", thumb, src, html.escape(label),
+           html.escape(ev["title"]), html.escape(meta_line), desc)
 
-    more = '<section class="panel" id="more" hidden>%s</section>' % (
-        "\n".join(card(e) for e in runners) or '<p class="empty">Nothing else this week.</p>')
-    errors = '<footer>Some sources had trouble this run: %s</footer>' % html.escape(meta["errors"]) if meta["errors"] else ""
+    top = "\n".join(card(e) for e in picks) or '<p class="empty">No strong matches this week.</p>'
+    more = "\n".join(card(e) for e in runners) or '<p class="empty">Nothing else this week.</p>'
+    errors = '<p class="err">Some sources had trouble this run: %s</p>' % html.escape(meta["errors"]) if meta["errors"] else ""
 
-    counts = " · ".join("%s %d" % (k, v) for k, v in meta["counts"].items())
     return """<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Weekly Event Picks</title>
+<title>Event Picks</title>
 <style>
-:root{--bg:#faf8f5;--card:#fff;--ink:#1d1b19;--mute:#6b665f;--line:#e8e3dc;--accent:#b4442c;
---eb:#d1410c;--lu:#5b4bd6;--pf:#c2307a}
-@media (prefers-color-scheme: dark){:root{--bg:#161514;--card:#201f1d;--ink:#f0ece6;--mute:#a39d94;--line:#34312d;--accent:#e2765c}}
+:root{--bg:#fbfbfa;--ink:#1c1c1e;--mute:#8a8a8e;--line:#ececec;--seg:#efeff0;--pill:#fff;
+--eb:#e8590c;--lu:#6e5cf0;--pf:#d6336c}
+@media (prefers-color-scheme: dark){:root{--bg:#161618;--ink:#f2f2f4;--mute:#8e8e93;--line:#2a2a2e;--seg:#232326;--pill:#3a3a3e}}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-main{max-width:760px;margin:0 auto;padding:32px 16px 64px}
-h1{font-size:28px;margin:0 0 4px;letter-spacing:-.01em}
-.sub{color:var(--mute);margin:0 0 24px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:12px;margin:0 0 14px;overflow:hidden;display:grid;grid-template-columns:232px minmax(0,1fr)}
-.card[hidden]{display:none}
-.cover{display:block;position:relative;overflow:hidden;background:var(--line);min-height:170px}
-.cover img{position:absolute;inset:0;width:100%%;height:100%%;object-fit:cover;display:block}
-.ph-eventbrite{background:linear-gradient(135deg,var(--eb),#7a2606)}.ph-luma{background:linear-gradient(135deg,var(--lu),#2b2170)}.ph-partiful{background:linear-gradient(135deg,var(--pf),#6b1442)}
-.body{padding:14px 18px 16px;min-width:0}
-.desc{margin:8px 0 0;font-size:14px;line-height:1.45;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
-@media (max-width:620px){.card{grid-template-columns:1fr}.cover{min-height:0;aspect-ratio:16/9}}
-.top{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:12px}
-.src{font-weight:600;color:#fff;border-radius:999px;padding:2px 9px}
-.src-eventbrite{background:var(--eb)}.src-luma{background:var(--lu)}.src-partiful{background:var(--pf)}
-.tag{border:1px solid var(--accent);color:var(--accent);border-radius:999px;padding:1px 8px}
-.flag{background:var(--line);border-radius:999px;padding:1px 8px;color:var(--mute)}
-.score{margin-left:auto;color:var(--mute);font-variant-numeric:tabular-nums}
-h2{font-size:18px;margin:8px 0 2px;line-height:1.3}
-h2 a{color:inherit;text-decoration:none}h2 a:hover{text-decoration:underline}
-.when{margin:0;font-weight:600}
-.meta{margin:2px 0 0;color:var(--mute);font-size:14px}
-.tabs{display:inline-flex;background:var(--line);border-radius:10px;padding:3px;margin:0 0 14px}
-.tabs button{font:inherit;font-size:14px;font-weight:600;border:0;background:transparent;color:var(--mute);border-radius:8px;padding:6px 14px;cursor:pointer}
-.tabs button[aria-selected=true]{background:var(--card);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.15)}
-.tabs .n{font-weight:500;opacity:.6;margin-left:4px}
-.empty{color:var(--mute)}
-footer{margin-top:32px;color:var(--mute);font-size:13px}
-.chips{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px}
-.chips button{font:inherit;font-size:13px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:4px 12px;cursor:pointer}
-.chips button[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+main{max-width:720px;margin:0 auto;padding:28px 20px 56px}
+h1{font-size:22px;font-weight:700;letter-spacing:-.01em;margin:0 0 18px}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:8px}
+.seg{display:inline-flex;background:var(--seg);border-radius:9px;padding:2px}
+.seg button{font:inherit;font-size:13px;font-weight:600;border:0;background:none;color:var(--mute);border-radius:7px;padding:5px 12px;cursor:pointer}
+.seg button[aria-selected=true]{background:var(--pill);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.seg .n{font-weight:500;opacity:.55;margin-left:5px}
+.sites{display:flex;gap:2px}
+.sites button{font:inherit;font-size:13px;border:0;background:none;color:var(--mute);padding:4px 8px;border-radius:6px;cursor:pointer}
+.sites button[aria-pressed=true]{color:var(--ink);font-weight:600}
+.ev{display:grid;grid-template-columns:112px minmax(0,1fr);gap:16px;padding:16px 0;border-bottom:1px solid var(--line);color:inherit;text-decoration:none}
+.ev[hidden],.panel[hidden]{display:none}
+.ev:hover h2{text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px}
+.thumb{width:112px;height:112px;border-radius:10px;overflow:hidden;background:var(--seg)}
+.thumb img{width:100%%;height:100%%;object-fit:cover;display:block}
+.src{margin:0;font-size:12px;color:var(--mute);display:flex;align-items:center;gap:6px}
+.dot{width:7px;height:7px;border-radius:50%%;display:inline-block}
+.dot.eventbrite{background:var(--eb)}.dot.luma{background:var(--lu)}.dot.partiful{background:var(--pf)}
+h2{font-size:16px;font-weight:600;line-height:1.3;margin:3px 0 2px}
+.meta{margin:0;font-size:13px;color:var(--mute)}
+.desc{margin:6px 0 0;font-size:13.5px;line-height:1.45;opacity:.85;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.empty,.err{color:var(--mute);font-size:13px;margin-top:20px}
+@media (max-width:520px){.ev{grid-template-columns:76px minmax(0,1fr);gap:12px}.thumb{width:76px;height:76px}}
 </style></head><body><main>
-<h1>Your picks through %s</h1>
-<p class="sub">Updated %s · %d events scanned (%s)</p>
-<div class="tabs" role="tablist">
-<button role="tab" aria-selected="true" data-tab="top">Top picks<span class="n">%d</span></button><button role="tab" aria-selected="false" data-tab="more">More to consider<span class="n">%d</span></button>
-</div>
-<div class="chips" role="group" aria-label="Filter by site">
-<button aria-pressed="true" data-f="all">All</button><button aria-pressed="false" data-f="Eventbrite">Eventbrite</button><button aria-pressed="false" data-f="Luma">Luma</button><button aria-pressed="false" data-f="Partiful">Partiful</button>
+<h1>Picks through %s</h1>
+<div class="bar">
+  <div class="seg" role="tablist">
+    <button role="tab" aria-selected="true" data-tab="top">Top picks<span class="n">%d</span></button><button role="tab" aria-selected="false" data-tab="more">More<span class="n">%d</span></button>
+  </div>
+  <div class="sites" role="group" aria-label="Filter by site">
+    <button aria-pressed="true" data-f="all">All</button><button aria-pressed="false" data-f="Eventbrite">Eventbrite</button><button aria-pressed="false" data-f="Luma">Luma</button><button aria-pressed="false" data-f="Partiful">Partiful</button>
+  </div>
 </div>
 <section class="panel" id="top">%s</section>
-%s
+<section class="panel" id="more" hidden>%s</section>
 %s
 </main><script>
-document.querySelectorAll('.tabs button').forEach(function(b){b.onclick=function(){
-  document.querySelectorAll('.tabs button').forEach(function(x){x.setAttribute('aria-selected',x===b)});
+document.querySelectorAll('.seg button').forEach(function(b){b.onclick=function(){
+  document.querySelectorAll('.seg button').forEach(function(x){x.setAttribute('aria-selected',x===b)});
   document.querySelectorAll('.panel').forEach(function(p){p.hidden=p.id!==b.dataset.tab});
   window.scrollTo(0,0);
 }});
-document.querySelectorAll('.chips button').forEach(function(b){b.onclick=function(){
-  document.querySelectorAll('.chips button').forEach(function(x){x.setAttribute('aria-pressed',x===b)});
-  document.querySelectorAll('.card').forEach(function(c){c.hidden=b.dataset.f!=='all'&&c.dataset.src!==b.dataset.f});
+document.querySelectorAll('.sites button').forEach(function(b){b.onclick=function(){
+  document.querySelectorAll('.sites button').forEach(function(x){x.setAttribute('aria-pressed',x===b)});
+  document.querySelectorAll('.ev').forEach(function(c){c.hidden=b.dataset.f!=='all'&&c.dataset.src!==b.dataset.f});
 }});
-</script></body></html>""" % (
-        meta["end_label"], meta["run_label"], meta["total"], counts, len(picks), len(runners),
-        "\n".join(card(e) for e in picks) or "<p>No strong matches this week.</p>",
-        more, errors)
+</script></body></html>""" % (meta["end_label"], len(picks), len(runners), top, more, errors)
 
 
 # -------------------------------------------------------------------- main
