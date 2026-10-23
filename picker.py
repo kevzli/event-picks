@@ -499,12 +499,16 @@ def choose(events, profile):
         take(best)
     picks.sort(key=lambda e: e["start"])
     runners = [e for e in good if e not in picks and norm_title(e["title"]) not in seen_titles]
-    dedup, rt = [], set()
+    # runners-up get the same variety rules: one per title and one per organizer
+    dedup, rt, ro = [], set(), set(per_org)
     for e in runners:
         k = norm_title(e["title"])
-        if k not in rt:
-            rt.add(k)
-            dedup.append(e)
+        if k in rt or (org(e) and org(e) in ro):
+            continue
+        rt.add(k)
+        if org(e):
+            ro.add(org(e))
+        dedup.append(e)
     return picks, dedup[:12]
 
 
@@ -553,10 +557,11 @@ def render(picks, runners, meta, profile):
             " · " + html.escape(fmt_price(ev["price"])),
             desc)
 
-    def row(ev):
-        return '<li><a href="%s" target="_blank" rel="noopener">%s</a> <span>%s · %s · %.1f</span></li>' % (
-            html.escape(ev["url"]), html.escape(ev["title"]), ev["source"],
-            html.escape(fmt_when(ev, tz)), ev["score"])
+    more = ""
+    if runners:
+        more = '<section class="more"><h3>More to consider <span>%d</span></h3>\n%s\n</section>' % (
+            len(runners), "\n".join(card(e) for e in runners))
+    errors = '<footer>Some sources had trouble this run: %s</footer>' % html.escape(meta["errors"]) if meta["errors"] else ""
 
     counts = " · ".join("%s %d" % (k, v) for k, v in meta["counts"].items())
     return """<!doctype html>
@@ -590,8 +595,10 @@ h2{font-size:18px;margin:8px 0 2px;line-height:1.3}
 h2 a{color:inherit;text-decoration:none}h2 a:hover{text-decoration:underline}
 .when{margin:0;font-weight:600}
 .meta{margin:2px 0 0;color:var(--mute);font-size:14px}
-details{margin-top:28px}summary{cursor:pointer;font-weight:600}
-ul{padding-left:18px}li{margin:6px 0}li span{color:var(--mute);font-size:13px}
+.more{margin-top:36px;padding-top:20px;border-top:1px solid var(--line)}
+.more h3{font-size:15px;font-weight:600;color:var(--mute);margin:0 0 14px;text-transform:uppercase;letter-spacing:.06em}
+.more h3 span{font-weight:500;margin-left:6px;opacity:.7}
+.more:not(:has(.card:not([hidden]))){display:none}
 footer{margin-top:32px;color:var(--mute);font-size:13px}
 .chips{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px}
 .chips button{font:inherit;font-size:13px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:4px 12px;cursor:pointer}
@@ -603,8 +610,8 @@ footer{margin-top:32px;color:var(--mute);font-size:13px}
 <button aria-pressed="true" data-f="all">All</button><button aria-pressed="false" data-f="Eventbrite">Eventbrite</button><button aria-pressed="false" data-f="Luma">Luma</button><button aria-pressed="false" data-f="Partiful">Partiful</button>
 </div>
 %s
-<details><summary>Runners-up (%d)</summary><ul>%s</ul></details>
-<footer>Scores come from profile.json, which you can edit to change the weights. Errors: %s</footer>
+%s
+%s
 </main><script>
 document.querySelectorAll('.chips button').forEach(function(b){b.onclick=function(){
   document.querySelectorAll('.chips button').forEach(function(x){x.setAttribute('aria-pressed',x===b)});
@@ -613,8 +620,7 @@ document.querySelectorAll('.chips button').forEach(function(b){b.onclick=functio
 </script></body></html>""" % (
         meta["end_label"], meta["run_label"], meta["total"], counts,
         "\n".join(card(e) for e in picks) or "<p>No strong matches this week.</p>",
-        len(runners), "\n".join(row(e) for e in runners),
-        html.escape(meta["errors"] or "none"))
+        more, errors)
 
 
 # -------------------------------------------------------------------- main

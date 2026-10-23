@@ -58,7 +58,7 @@ You can also add new interests: copy any entry in `lanes` and give it a new name
 1. **Fetch:** pull upcoming events from Eventbrite searches, Luma's city feed (plus any calendars you follow), and Partiful's Explore page. Pages are cached for 6 hours.
 2. **Filter:** drop events outside your distance, price and time filters, events during your `busy` times, and sold-out events.
 3. **Score:** match each event's text against your interests (weighted by your sliders), then apply penalties, a bonus for organizers you like, and adjustments for price and time of day.
-4. **Pick:** choose a varied set:
+4. **Pick:** choose a varied set (the "More to consider" list below the picks follows the same variety rules):
    - one strong pick from each site,
    - one "something different" pick from outside your top three interests,
    - then the best of the rest, with at most 2 per day and 1 per organizer, and each repeat of the same interest counting a little less.
