@@ -547,7 +547,7 @@ def render(picks, runners, meta, profile):
                                            fmt_price(ev["price"]) if ev["price"] is not None else "") if x)
         desc = '<p class="desc">%s</p>' % html.escape(ev["blurb"]) if ev.get("blurb") else ""
         return """
-<a class="ev" data-src="%s" href="%s" target="_blank" rel="noopener">
+<a class="ev" data-src="%s" data-start="%s" href="%s" target="_blank" rel="noopener">
   <div class="thumb%s">%s</div>
   <div class="txt">
     <p class="src"><i class="dot %s"></i>%s</p>
@@ -555,7 +555,7 @@ def render(picks, runners, meta, profile):
     <p class="meta">%s</p>
     %s
   </div>
-</a>""" % (ev["source"], url, "" if thumb else " ph", thumb, src, html.escape(label),
+</a>""" % (ev["source"], ev["start"].astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"), url, "" if thumb else " ph", thumb, src, html.escape(label),
            html.escape(ev["title"]), html.escape(meta_line), desc)
 
     top = "\n".join(card(e) for e in picks) or '<p class="empty">No strong matches this week.</p>'
@@ -599,16 +599,38 @@ h2{font-size:16px;font-weight:600;line-height:1.3;margin:3px 0 2px}
 <h1>Picks through %s</h1>
 <div class="bar">
   <div class="seg" role="tablist">
-    <button role="tab" aria-selected="true" data-tab="top">Top picks<span class="n">%d</span></button><button role="tab" aria-selected="false" data-tab="more">More<span class="n">%d</span></button>
+    <button role="tab" aria-selected="true" data-tab="top">Top picks<span class="n" id="n-top">%d</span></button><button role="tab" aria-selected="false" data-tab="more">More<span class="n" id="n-more">%d</span></button>
   </div>
   <div class="sites" role="group" aria-label="Filter by site">
     <button aria-pressed="true" data-f="all">All</button><button aria-pressed="false" data-f="Eventbrite">Eventbrite</button><button aria-pressed="false" data-f="Luma">Luma</button><button aria-pressed="false" data-f="Partiful">Partiful</button>
   </div>
 </div>
-<section class="panel" id="top">%s</section>
+<section class="panel" id="top" data-target="%d">%s</section>
 <section class="panel" id="more" hidden>%s</section>
 %s
 </main><script>
+// The page is written once a week, so drop events that have already started
+// and top up the main picks from the runners-up, best first.
+function prune(){
+  var now=Date.now();
+  document.querySelectorAll('.ev').forEach(function(e){if(Date.parse(e.dataset.start)<now)e.remove()});
+  var top=document.getElementById('top'),more=document.getElementById('more');
+  var want=+top.dataset.target-top.querySelectorAll('.ev').length;
+  more.querySelectorAll('.ev').forEach(function(e){
+    if(want>0){var t=Date.parse(e.dataset.start),placed=false;
+      top.querySelectorAll('.ev').forEach(function(x){if(!placed&&Date.parse(x.dataset.start)>t){top.insertBefore(e,x);placed=true}});
+      if(!placed)top.appendChild(e);want--}
+  });
+  [['top','n-top','No upcoming picks left. Refresh to find more.'],['more','n-more','Nothing else coming up.']].forEach(function(a){
+    var p=document.getElementById(a[0]),n=p.querySelectorAll('.ev').length;
+    document.getElementById(a[1]).textContent=n;
+    var em=p.querySelector('.empty');
+    if(!n&&!em){em=document.createElement('p');em.className='empty';em.textContent=a[2];p.appendChild(em)}
+    if(n&&em)em.remove();
+  });
+}
+prune();
+setInterval(prune,60000);
 document.querySelectorAll('.seg button').forEach(function(b){b.onclick=function(){
   document.querySelectorAll('.seg button').forEach(function(x){x.setAttribute('aria-selected',x===b)});
   document.querySelectorAll('.panel').forEach(function(p){p.hidden=p.id!==b.dataset.tab});
@@ -618,7 +640,7 @@ document.querySelectorAll('.sites button').forEach(function(b){b.onclick=functio
   document.querySelectorAll('.sites button').forEach(function(x){x.setAttribute('aria-pressed',x===b)});
   document.querySelectorAll('.ev').forEach(function(c){c.hidden=b.dataset.f!=='all'&&c.dataset.src!==b.dataset.f});
 }});
-</script></body></html>""" % (meta["end_label"], len(picks), len(runners), top, more, errors)
+</script></body></html>""" % (meta["end_label"], len(picks), len(runners), len(picks), top, more, errors)
 
 
 # -------------------------------------------------------------------- main

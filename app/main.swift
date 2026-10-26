@@ -21,6 +21,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
     let spinner = NSProgressIndicator()
     var refreshItem: NSToolbarItem?
     var running: Process?
+    var loadedAt = Date.distantPast
     lazy var preferences = PreferencesController(
         profileURL: dataDir.appendingPathComponent("profile.json"),
         onRefresh: { [weak self] in self?.refresh() },
@@ -57,6 +58,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
 
         load()
         if isStale() { refresh() }
+
+        // Coming back to the app: pick up a newer picks file (e.g. from the Monday
+        // refresh) or at least drop events that have started since it was shown.
+        NotificationCenter.default.addObserver(forName: NSApplication.didBecomeActiveNotification,
+                                               object: nil, queue: .main) { [weak self] _ in
+            guard let self = self, self.running == nil else { return }
+            let attrs = try? FileManager.default.attributesOfItem(atPath: picksFile.path)
+            if let d = attrs?[.modificationDate] as? Date, d > self.loadedAt {
+                self.load()
+            } else {
+                self.web.evaluateJavaScript("typeof prune === 'function' && prune()")
+            }
+        }
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ app: NSApplication) -> Bool { true }
@@ -109,6 +123,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
     func load() {
         if FileManager.default.fileExists(atPath: picksFile.path) {
             web.loadFileURL(picksFile, allowingReadAccessTo: dataDir)
+            loadedAt = Date()
             let attrs = try? FileManager.default.attributesOfItem(atPath: picksFile.path)
             if let d = attrs?[.modificationDate] as? Date {
                 let f = DateFormatter()

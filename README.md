@@ -63,6 +63,8 @@ You can also add new interests: copy any entry in `lanes` and give it a new name
    - one "something different" pick from outside your top three interests,
    - then the best of the rest, with at most 2 per day and 1 per organizer, and each repeat of the same interest counting a little less.
 
+Only upcoming events are shown. The page is written once a week, so once an event starts it disappears from the list, and the top picks are topped up from the "More" tab. This happens whenever you open or switch back to the app, and every minute while it's open.
+
 Event links open in your default web browser.
 
 ## Other cities
